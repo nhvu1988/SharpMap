@@ -117,7 +117,7 @@ namespace SharpMap.Layers
                         if (!Path.IsPathRooted(file))
                             file = Path.Combine(Path.GetDirectoryName(_fileName), file);
 
-                        if (file == null)
+                        if (file == null || !File.Exists(file))
                             continue;
 
                         if (_logger.IsDebugEnabled)
