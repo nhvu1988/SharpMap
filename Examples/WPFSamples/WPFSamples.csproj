@@ -111,6 +111,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SharpMap.Extensions\SharpMap.Extensions.csproj">
+      <Project>{a4140c12-53f5-438c-8d24-9e48c504fecf}</Project>
+      <Name>SharpMap.Extensions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SharpMap.Layers.BruTile\SharpMap.Layers.BruTile.csproj">
       <Project>{d84f31ed-3d81-42f2-9190-3d021d6038a0}</Project>
       <Name>SharpMap.Layers.BruTile</Name>

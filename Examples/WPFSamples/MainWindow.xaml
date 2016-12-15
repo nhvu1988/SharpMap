@@ -11,11 +11,13 @@
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" Name="Menu">
             <MenuItem Header="_File">
-                <MenuItem Header="_Exit" Click="MenuItem_OnClick"/>
+				<MenuItem Name="SelectTifFile" Header="SelectTifFile" Click="SelectTifFile_OnClick"/>
+				<MenuItem Header="_Exit" Click="MenuItem_OnClick"/>
             </MenuItem>
             <MenuItem Header="_Add Layer">
-                <MenuItem Header="_ShapeFile" Name="AddShapeLayer" Click="AddShapeLayer_OnClick"/>
-            </MenuItem>
+				<MenuItem Header="_ShapeFile" Name="AddShapeLayer" Click="AddShapeLayer_OnClick"/>
+				<MenuItem Header="_AddShapeFile1" Name="AddShapeFile" Click="AddShapeLayer1_OnClick"/>
+			</MenuItem>
             <MenuItem Header="_BackgroundMap">
                 <MenuItem Header="_OpenStreetMap" Name="BgOsm" Click="BgOSM_OnClick" IsCheckable="False"/>
                 <MenuItem Header="_MapQuest" Name="BgMapQuest" Click="BgMapQuest_Click" IsCheckable="False"/>
