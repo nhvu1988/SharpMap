@@ -15,6 +15,7 @@
 // along with SharpMap; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 
+using System;
 using System.ComponentModel;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
@@ -62,9 +63,21 @@ namespace SharpMap.UI.WPF
         public static readonly DependencyProperty MaxExtentProperty =
             DependencyProperty.Register("MaxExtent", typeof (Envelope), typeof (SharpMapHost), new PropertyMetadata(SetMaxExtentCallback));
 
-        // Dependency Property to store MapExtent.
-        public static readonly DependencyProperty MapExtentProperty =
-            DependencyProperty.Register("MapExtent", typeof (Envelope), typeof (SharpMapHost), new PropertyMetadata(MapExtentCallback));
+		// Dependency Property to store MaxCenter.
+		public static readonly DependencyProperty MapCenterProperty =
+			DependencyProperty.Register("MapCenter", typeof(Coordinate), typeof(SharpMapHost), new PropertyMetadata(SetMapCenterCallback));
+
+		// Dependency Property to store MaxCenter.
+		public static readonly DependencyProperty MapZoomProperty =
+			DependencyProperty.Register("MapZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapZoomCallback));
+
+		// Dependency Property to store CurrentMouseCoordinate.
+		public static readonly DependencyProperty CurrentMouseCoordinateProperty =
+			DependencyProperty.Register("CurrentMouseCoordinate", typeof(Coordinate), typeof(SharpMapHost));
+
+		// Dependency Property to store MapExtent.
+		public static readonly DependencyProperty MapExtentProperty =
+            DependencyProperty.Register("MapExtent", typeof (Envelope), typeof (SharpMapHost), new PropertyMetadata(SetMapExtentCallback));
 
         // Dependency Property used when a new geometry is defined.
         public static readonly DependencyProperty DefinedGeometryProperty =
@@ -80,7 +93,7 @@ namespace SharpMap.UI.WPF
 
         private GeometryProvider _editLayerGeoProvider;
 
-        private Coordinate _currentMouseCoordinate;
+        //private Coordinate CurrentMouseCoordinate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SharpMapHost"/> class. 
@@ -106,9 +119,11 @@ namespace SharpMap.UI.WPF
             KeyDown += OnKeyDown;
 
             _mapBox.MouseMove += MapBoxOnMouseMove;
+	        _mapBox.GeometryDefined += geometry => DefinedGeometry = geometry; 
+	        _mapBox.MapZoomChanged += zoom => MapZoom = zoom;
         }
 
-        public ObservableCollection<ILayer> MapLayers
+	    public ObservableCollection<ILayer> MapLayers
         {
             get
             {
@@ -148,7 +163,7 @@ namespace SharpMap.UI.WPF
         {
             get
             {
-                return _currentMouseCoordinate != null ? string.Format("{0:0}, {1:0}", _currentMouseCoordinate.X, _currentMouseCoordinate.Y) : "";
+                return CurrentMouseCoordinate != null ? string.Format("{0:0}, {1:0}", CurrentMouseCoordinate.X, CurrentMouseCoordinate.Y) : "";
             }
         }
 
@@ -156,9 +171,14 @@ namespace SharpMap.UI.WPF
         {
             get
             {
-                return _currentMouseCoordinate;
+                return (Coordinate)GetValue(CurrentMouseCoordinateProperty);
             }
-        }
+
+			set
+			{
+				SetValue(CurrentMouseCoordinateProperty, value);
+			}
+		}
 
         public Envelope MaxExtent
         {
@@ -186,7 +206,29 @@ namespace SharpMap.UI.WPF
             }
         }
 
-        public IGeometry DefinedGeometry
+		public Coordinate MapCenter
+		{
+			get { return _mapBox.Map.Center; }
+			set { SetValue(MapCenterProperty, value); }
+		}
+
+	    public double MapZoom
+	    {
+		    get { return _mapBox.Map.Zoom; }
+		    set
+		    {
+				try
+				{ 
+					SetValue(MapZoomProperty, value);
+				}
+			    catch (Exception)
+			    {
+				    // ignored
+			    }
+		    }
+	    }
+
+		public IGeometry DefinedGeometry
         {
             get
             {
@@ -282,6 +324,7 @@ namespace SharpMap.UI.WPF
             mapBox.ActiveTool = newTool;
         }
 
+
         /// <summary>
         /// Gets called when changes on MaxExtent
         /// </summary>
@@ -304,12 +347,33 @@ namespace SharpMap.UI.WPF
             }
         }
 
-        /// <summary>
-        /// Gets called when changes on MapExtent
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="args">The event arguments</param>
-        private static void MapExtentCallback(object sender, DependencyPropertyChangedEventArgs args)
+		/// <summary>
+		/// Gets called when changes on Center
+		/// </summary>
+		/// <param name="sender">The sender object</param>
+		/// <param name="args">The event arguments</param>
+		private static void SetMapCenterCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+			{
+				return;
+			}
+
+			var center = (Coordinate) args.NewValue;
+			if (center != null)
+			{
+				host._mapBox.Map.Center = center;
+				host._mapBox.Refresh();
+			}
+		}
+
+		/// <summary>
+		/// Gets called when changes on MapExtent
+		/// </summary>
+		/// <param name="sender">The sender object</param>
+		/// <param name="args">The event arguments</param>
+		private static void SetMapExtentCallback(object sender, DependencyPropertyChangedEventArgs args)
         {
             var host = sender as SharpMapHost;
             if (host == null)
@@ -323,13 +387,27 @@ namespace SharpMap.UI.WPF
             mapBox.Refresh();
         }
 
+		private static void SetMapZoomCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+			{
+				return;
+			}
 
-        /// <summary>
-        /// Gets called when changes on GeometryDefined
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="args">The event arguments</param>
-        private static void GeometryDefinedCallback(object sender, DependencyPropertyChangedEventArgs args)
+			var mapBox = host._mapBox;
+			var extent = (double)args.NewValue;
+			mapBox.Map.Zoom  = extent;
+			mapBox.Refresh();
+		}
+
+
+		/// <summary>
+		/// Gets called when changes on GeometryDefined
+		/// </summary>
+		/// <param name="sender">The sender object</param>
+		/// <param name="args">The event arguments</param>
+		private static void GeometryDefinedCallback(object sender, DependencyPropertyChangedEventArgs args)
         {
             var host = sender as SharpMapHost;
             if (host == null)
@@ -455,7 +533,7 @@ namespace SharpMap.UI.WPF
         /// <param name="mouseEventArgs">The event arguments</param>
         private void MapBoxOnMouseMove(Coordinate worldPos, MouseEventArgs mouseEventArgs)
         {
-            _currentMouseCoordinate = worldPos;
+            CurrentMouseCoordinate = worldPos;
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("CurrentMouseCoordinate"));

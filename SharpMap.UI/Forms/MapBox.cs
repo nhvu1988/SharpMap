@@ -2392,9 +2392,8 @@ namespace SharpMap.Forms
                     cl.CloseRing();
                     GeometryDefined(Map.Factory.CreatePolygon(Map.Factory.CreateLinearRing(NetTopologySuite.Geometries.CoordinateArrays.AtLeastNCoordinatesOrNothing(4, cl.ToCoordinateArray())), null));
                 }
-                ActiveTool = Tools.None;
+                ActiveTool = Tools.Pan;
             }
-
             else if (_activeTool == Tools.DrawLine)
             {
                 if (GeometryDefined != null)
@@ -2402,7 +2401,7 @@ namespace SharpMap.Forms
                     var cl = new NetTopologySuite.Geometries.CoordinateList(_pointArray, false);
                     GeometryDefined(Map.Factory.CreateLineString(NetTopologySuite.Geometries.CoordinateArrays.AtLeastNCoordinatesOrNothing(2, cl.ToCoordinateArray())));
                 }
-                ActiveTool = Tools.None;
+                ActiveTool = Tools.Pan;
             }
         }
 
