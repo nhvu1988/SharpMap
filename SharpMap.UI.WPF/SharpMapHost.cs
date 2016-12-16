@@ -191,17 +191,7 @@ namespace SharpMap.UI.WPF
 		public double MapZoom
 		{
 			get { return _mapBox.Map.Zoom; }
-			set
-			{
-				try
-				{
-					SetValue(MapZoomProperty, value);
-				}
-				catch (Exception)
-				{
-					// ignored
-				}
-			}
+			set { SetValue(MapZoomProperty, value); }
 		}
 
 		public IGeometry DefinedGeometry

@@ -1469,7 +1469,7 @@ namespace SharpMap.Forms
             _logger.Debug("TimerRefresh");
             if (Interlocked.CompareExchange(ref _needToRefreshAfterWheel, 0, 1)==1)
             {
-                OnMapZoomChanged(_map.Zoom);
+                //OnMapZoomChanged(_map.Zoom);
 
                 Refresh();
             }
