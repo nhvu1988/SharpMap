@@ -348,10 +348,13 @@ namespace SharpMap.UI.WPF
 			{
 				return;
 			}
-
+			
+			var zoom = (double) args.NewValue;
 			var mapBox = host._mapBox;
-			var extent = (double) args.NewValue;
-			mapBox.Map.Zoom = extent;
+			if (Math.Abs(mapBox.Map.Zoom - zoom) < 0.0001)
+				return;
+
+			mapBox.Map.Zoom = zoom;
 			mapBox.Refresh();
 		}
 
