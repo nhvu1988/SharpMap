@@ -147,6 +147,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Layers\GdalRasterLayerCachingProxy.cs" />
+    <Compile Include="Layers\GdiImageIndexLayer.cs" />
     <Compile Include="Layers\GeoTransform.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\SharedAssemblyVersion.cs">

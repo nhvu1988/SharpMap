@@ -26,7 +26,6 @@ using System.IO;
 using System.Runtime.Serialization;
 using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
-using RTools_NTS.Util;
 using Point = System.Drawing.Point;
 
 namespace SharpMap.Layers
@@ -38,24 +37,31 @@ namespace SharpMap.Layers
     [Serializable]
     public class GdiImageLayer : Layer
     {
-        private Image _image;
+		protected Image _image;
 
         [NonSerialized] 
         private Image _tmpImage;
 
         [NonSerialized]
-        private WorldFile _worldFile;
+        protected WorldFile _worldFile;
         
         [NonSerialized]
-        private Envelope _envelope;
+        protected Envelope _envelope;
 
         private float _transparency;
 
-        /// <summary>
-        /// Creates an instance of this class using the provided layer
-        /// </summary>
-        /// <param name="fileName">The path to the file</param>
-        public GdiImageLayer(string fileName)
+		/// <summary>
+		/// Creates an instance of this class using the provided layer
+		/// </summary>
+		public GdiImageLayer()
+		{
+		}
+
+		/// <summary>
+		/// Creates an instance of this class using the provided layer
+		/// </summary>
+		/// <param name="fileName">The path to the file</param>
+		public GdiImageLayer(string fileName)
             : this(Path.GetFileName(fileName), fileName)
         {
         }
@@ -341,7 +347,7 @@ namespace SharpMap.Layers
 
         #region WorldFile
 
-        internal class WorldFile
+        protected class WorldFile
         {
             private readonly Matrix2D _matrix = new Matrix2D();
             private Matrix2D _inverse;
