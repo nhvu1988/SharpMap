@@ -55,6 +55,7 @@ namespace SharpMap.Layers
 		/// </summary>
 		public GdiImageLayer()
 		{
+			InterpolationMode = InterpolationMode.HighQualityBicubic;
 		}
 
 		/// <summary>
@@ -83,10 +84,8 @@ namespace SharpMap.Layers
         /// </summary>
         /// <param name="layerName">The layer name</param>
         /// <param name="image"></param>
-        public GdiImageLayer(string layerName, Image image)
+        public GdiImageLayer(string layerName, Image image) : this()
         {
-            InterpolationMode = InterpolationMode.HighQualityBicubic;
-
             LayerName = layerName;
             _image = image;
             SetEnvelope();
@@ -167,17 +166,13 @@ namespace SharpMap.Layers
         {
             if (map.Center == null)
                 throw (new ApplicationException("Cannot render map. View center not specified"));
-
             if (_image == null)
                 throw new Exception("Image not set");
-
         
             // View to render
             var mapView = map.Envelope;
-            
             // Layer view
             var lyrView = _envelope;
-
             // Get the view intersection
             var vi = mapView.Intersection(lyrView);
             if (!vi.IsNull)

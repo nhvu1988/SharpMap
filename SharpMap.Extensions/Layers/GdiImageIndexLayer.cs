@@ -10,6 +10,9 @@ using SharpMap.Data.Providers;
 
 namespace SharpMap.Layers
 {
+	/// <summary>
+	/// Implementation of TILEINDEX of GDAL raster-layers using image rendering
+	/// </summary>
 	public class GdiImageIndexLayer : GdiImageLayer
 	{
 		class CacheHolder
@@ -42,6 +45,8 @@ namespace SharpMap.Layers
 		/// <param name="fieldName">FieldName in the shapefile storing full or relative path-names to the datasets</param>
 		public GdiImageIndexLayer(string layerName, string fileName, string fieldName)
         {
+			GdalConfiguration.ConfigureGdal();
+
 			LayerName = layerName;
 			_fileName = fileName;
 			_shapeFile = new ShapeFile(fileName, true);
@@ -71,48 +76,42 @@ namespace SharpMap.Layers
 				var dt = ds.Tables[0];
 				foreach (FeatureDataRow fdr in dt.Rows)
 				{
-					if (fdr.Geometry.EnvelopeInternal.Intersects(map.Envelope))
+					var file = fdr[_fieldName] as string;
+					if (!Path.IsPathRooted(file))
+						file = Path.Combine(Path.GetDirectoryName(_fileName), file);
+
+					if (file == null || !File.Exists(file))
+						continue;
+
+					if (_logger.IsDebugEnabled)
+						_logger.Debug("Drawing " + file);
+
+					if (!_openDatasets.ContainsKey(file))
 					{
-						var file = fdr[_fieldName] as string;
-						if (!Path.IsPathRooted(file))
-							file = Path.Combine(Path.GetDirectoryName(_fileName), file);
-
-						if (file == null || !File.Exists(file))
-							continue;
-
-						if (_logger.IsDebugEnabled)
-							_logger.Debug("Drawing " + file);
-
-						if (!_openDatasets.ContainsKey(file))
+						var gdalDataset = Gdal.OpenShared(file, Access.GA_ReadOnly);
+						var geoTrans = new double[6];
+						gdalDataset.GetGeoTransform(geoTrans);
+						_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
+						_image = Image.FromFile(file);
+						_envelope = _worldFile.ToGroundBounds(_image.Width, _image.Height).EnvelopeInternal;
+						_openDatasets.Add(file, new CacheHolder()
 						{
-							GdalConfiguration.ConfigureGdal();
-							var gdalDataset = Gdal.OpenShared(file, Access.GA_ReadOnly);
-							var geoTrans = new double[6];
-							gdalDataset.GetGeoTransform(geoTrans);
-							_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
-							_image = Image.FromFile(file);
-							_envelope = _worldFile.ToGroundBounds(_image.Width, _image.Height).EnvelopeInternal;
-							_openDatasets.Add(file, new CacheHolder()
-							{
-								WorldFile = _worldFile,
-								Envelope = _envelope
-							});
-						}
-						else
-						{
-							CacheHolder hld = _openDatasets[file];
-							_worldFile = hld.WorldFile;
-							_envelope = hld.Envelope;
-							_image = Image.FromFile(file);
-						}
-
-						base.Render(g, map);
-						_envelope = null;
-						_image.Dispose();
-						//_gdalDataset = null;
+							WorldFile = _worldFile,
+							Envelope = _envelope
+						});
 					}
-				}
+					else
+					{
+						CacheHolder hld = _openDatasets[file];
+						_worldFile = hld.WorldFile;
+						_envelope = hld.Envelope;
+						_image = Image.FromFile(file);
+					}
 
+					base.Render(g, map);
+					_envelope = null;
+					_image.Dispose();
+				}
 			}
 			catch (Exception)
 			{
