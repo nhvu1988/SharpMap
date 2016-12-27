@@ -86,13 +86,14 @@ namespace SharpMap.Layers
 					if (_logger.IsDebugEnabled)
 						_logger.Debug("Drawing " + file);
 
+					_image = Image.FromFile(file);
+
 					if (!_openDatasets.ContainsKey(file))
 					{
 						var gdalDataset = Gdal.OpenShared(file, Access.GA_ReadOnly);
 						var geoTrans = new double[6];
 						gdalDataset.GetGeoTransform(geoTrans);
 						_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
-						_image = Image.FromFile(file);
 						_envelope = _worldFile.ToGroundBounds(_image.Width, _image.Height).EnvelopeInternal;
 						_openDatasets.Add(file, new CacheHolder()
 						{
@@ -105,7 +106,6 @@ namespace SharpMap.Layers
 						CacheHolder hld = _openDatasets[file];
 						_worldFile = hld.WorldFile;
 						_envelope = hld.Envelope;
-						_image = Image.FromFile(file);
 					}
 
 					base.Render(g, map);
