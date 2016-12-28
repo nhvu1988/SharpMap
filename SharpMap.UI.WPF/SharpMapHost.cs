@@ -199,7 +199,7 @@ namespace SharpMap.UI.WPF
 			set { SetValue(MapZoomProperty, value); }
 		}
 
-		public double MapSRID
+		public int MapSRID
 		{
 			get { return _mapBox.Map.SRID; }
 			set { SetValue(MapSRIDProperty, value); }
