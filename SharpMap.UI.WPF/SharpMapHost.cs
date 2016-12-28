@@ -85,6 +85,11 @@ namespace SharpMap.UI.WPF
 			DependencyProperty.Register("MapExtent", typeof(Envelope), typeof(SharpMapHost),
 				new PropertyMetadata(SetMapExtentCallback));
 
+		// Dependency Property to store MapExtent.
+		public static readonly DependencyProperty MapSRIDProperty =
+			DependencyProperty.Register("MapSRID", typeof(int), typeof(SharpMapHost),
+				new PropertyMetadata(SetMapSRIDCallback));
+
 		// Dependency Property used when a new geometry is defined.
 		public static readonly DependencyProperty DefinedGeometryProperty =
 			DependencyProperty.Register("DefinedGeometry", typeof(IGeometry), typeof(SharpMapHost),
@@ -192,6 +197,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return _mapBox.Map.Zoom; }
 			set { SetValue(MapZoomProperty, value); }
+		}
+
+		public double MapSRID
+		{
+			get { return _mapBox.Map.SRID; }
+			set { SetValue(MapSRIDProperty, value); }
 		}
 
 		public IGeometry DefinedGeometry
@@ -338,6 +349,21 @@ namespace SharpMap.UI.WPF
 			var mapBox = host._mapBox;
 			var extent = (Envelope) args.NewValue;
 			mapBox.Map.ZoomToBox(extent);
+			mapBox.Refresh();
+		}
+
+		private static void SetMapSRIDCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+				return;
+
+			var srId = (int)args.NewValue;
+			var mapBox = host._mapBox;
+			if (mapBox.Map.SRID == srId)
+				return;
+
+			mapBox.Map.SRID = srId;
 			mapBox.Refresh();
 		}
 

@@ -11,6 +11,7 @@ using System.Net;
 using GeoAPI.Geometries;
 using System.ComponentModel;
 using Common.Logging;
+using System.Threading.Tasks;
 
 namespace SharpMap.Layers
 {
@@ -148,7 +149,7 @@ namespace SharpMap.Layers
                 var tileWidth = _source.Schema.GetTileWidth(level);
                 var tileHeight = _source.Schema.GetTileHeight(level);
 
-                foreach (TileInfo info in tiles)
+				foreach (TileInfo info in tiles)
                 {
                     if (_bitmaps.Find(info.Index) != null)
                     {
@@ -160,7 +161,6 @@ namespace SharpMap.Layers
                     }
                     else if (_fileCache != null && _fileCache.Exists(info.Index))
                     {
-
                         Bitmap img = GetImageFromFileCache(info) as Bitmap;
                         _bitmaps.Add(info.Index, img);
 
@@ -190,20 +190,18 @@ namespace SharpMap.Layers
                             if (res)
                             {
                                 Interlocked.Decrement(ref _numPendingDownloads);
-                                var e = DownloadProgressChanged;
-                                if (e != null)
-                                    e(_numPendingDownloads);
-                            }
+								DownloadProgressChanged?.Invoke(_numPendingDownloads);
+							}
 
                         }, token);
-                        var dt = new DownloadTask() { CancellationToken = cancelToken, Task = t };
+						var dt = new DownloadTask() { CancellationToken = cancelToken, Task = t };
                         lock (_currentTasks)
                         {
                             _currentTasks.Add(dt);
                             _numPendingDownloads++;
                         }
                         t.Start();
-                    }
+					}
                 }
             }
 
@@ -277,7 +275,6 @@ namespace SharpMap.Layers
                     {
                         AddImageToFileCache(tileInfo, bitmap);
                     }
-
 
                     if (cancelToken.IsCancellationRequested)
                         cancelToken.ThrowIfCancellationRequested();
