@@ -122,8 +122,6 @@ namespace SharpMap.UI.WPF
 			};
 			Child = _mapBox;
 
-			MapLayers = new ObservableCollection<ILayer>();
-
 			var scaleBar = new ScaleBar
 			{
 				Anchor = MapDecorationAnchor.LeftBottom
@@ -140,19 +138,19 @@ namespace SharpMap.UI.WPF
 
 		public ObservableCollection<ILayer> MapLayers
 		{
-			get { return (ObservableCollection<ILayer>) GetValue(MapLayersProperty); }
+			get { return (ObservableCollection<ILayer>)GetValue(MapLayersProperty); }
 			set { SetValue(MapLayersProperty, value); }
 		}
 
 		public Layer BackgroundLayer
 		{
-			get { return (Layer) GetValue(BackgroundLayerProperty); }
+			get { return (Layer)GetValue(BackgroundLayerProperty); }
 			set { SetValue(BackgroundLayerProperty, value); }
 		}
 
 		public MapBox.Tools ActiveTool
 		{
-			get { return (MapBox.Tools) GetValue(ActiveToolProperty); }
+			get { return (MapBox.Tools)GetValue(ActiveToolProperty); }
 			set { SetValue(ActiveToolProperty, value); }
 		}
 
@@ -168,14 +166,14 @@ namespace SharpMap.UI.WPF
 
 		public Coordinate CurrentMouseCoordinate
 		{
-			get { return (Coordinate) GetValue(CurrentMouseCoordinateProperty); }
+			get { return (Coordinate)GetValue(CurrentMouseCoordinateProperty); }
 
 			set { SetValue(CurrentMouseCoordinateProperty, value); }
 		}
 
 		public Envelope MaxExtent
 		{
-			get { return (Envelope) GetValue(MaxExtentProperty); }
+			get { return (Envelope)GetValue(MaxExtentProperty); }
 
 			set { SetValue(MaxExtentProperty, value); }
 		}
@@ -207,7 +205,7 @@ namespace SharpMap.UI.WPF
 
 		public IGeometry DefinedGeometry
 		{
-			get { return (IGeometry) GetValue(DefinedGeometryProperty); }
+			get { return (IGeometry)GetValue(DefinedGeometryProperty); }
 
 			set { SetValue(DefinedGeometryProperty, value); }
 		}
@@ -239,12 +237,21 @@ namespace SharpMap.UI.WPF
 			if (oldLayers != null)
 			{
 				oldLayers.CollectionChanged -= host.OnMapLayerChanged;
+				foreach (var layer in oldLayers.Where(l => host._mapBox.Map.Layers.Contains(l)))
+				{
+					host._mapBox.Map.Layers.Remove(layer);
+				}
 			}
 
 			var newLayers = args.NewValue as ObservableCollection<ILayer>;
 			if (newLayers != null)
 			{
 				newLayers.CollectionChanged += host.OnMapLayerChanged;
+				foreach (var layer in newLayers.Where(l => !host._mapBox.Map.Layers.Contains(l)))
+				{
+					host._mapBox.Map.Layers.Add(layer);
+				}
+				
 			}
 		}
 
@@ -285,7 +292,7 @@ namespace SharpMap.UI.WPF
 			}
 
 			var mapBox = host._mapBox;
-			var newTool = (MapBox.Tools) args.NewValue;
+			var newTool = (MapBox.Tools)args.NewValue;
 			mapBox.ActiveTool = newTool;
 		}
 
@@ -304,7 +311,7 @@ namespace SharpMap.UI.WPF
 			}
 
 			var mapBox = host._mapBox;
-			var extent = (Envelope) args.NewValue;
+			var extent = (Envelope)args.NewValue;
 			if (extent != null)
 			{
 				mapBox.Map.EnforceMaximumExtents = true;
@@ -325,7 +332,7 @@ namespace SharpMap.UI.WPF
 				return;
 			}
 
-			var center = (Coordinate) args.NewValue;
+			var center = (Coordinate)args.NewValue;
 			if (center != null)
 			{
 				host._mapBox.Map.Center = center;
@@ -347,7 +354,7 @@ namespace SharpMap.UI.WPF
 			}
 
 			var mapBox = host._mapBox;
-			var extent = (Envelope) args.NewValue;
+			var extent = (Envelope)args.NewValue;
 			mapBox.Map.ZoomToBox(extent);
 			mapBox.Refresh();
 		}
@@ -374,8 +381,8 @@ namespace SharpMap.UI.WPF
 			{
 				return;
 			}
-			
-			var zoom = (double) args.NewValue;
+
+			var zoom = (double)args.NewValue;
 			var mapBox = host._mapBox;
 			if (Math.Abs(mapBox.Map.Zoom - zoom) < 0.0001)
 				return;
@@ -407,7 +414,7 @@ namespace SharpMap.UI.WPF
 			}
 
 			host._editLayerGeoProvider.Geometries.Clear();
-			var geom = (IGeometry) args.NewValue;
+			var geom = (IGeometry)args.NewValue;
 			if (geom != null)
 			{
 				host._editLayerGeoProvider.Geometries.Add(geom);
@@ -424,8 +431,8 @@ namespace SharpMap.UI.WPF
 		private void OnKeyDown(object sender, KeyEventArgs keyEventArgs)
 		{
 			var currentEnvelope = _mapBox.Map.Envelope;
-			var dX = currentEnvelope.Width/2;
-			var dY = currentEnvelope.Height/2;
+			var dX = currentEnvelope.Width / 2;
+			var dY = currentEnvelope.Height / 2;
 
 			var x = _mapBox.Map.Center.X;
 			var y = _mapBox.Map.Center.Y;
@@ -464,23 +471,23 @@ namespace SharpMap.UI.WPF
 			switch (e.Action)
 			{
 				case NotifyCollectionChangedAction.Add:
-				{
-					var layers = e.NewItems.Cast<ILayer>();
-					foreach (var layer in layers.Where(layer => !_mapBox.Map.Layers.Contains(layer)))
 					{
-						_mapBox.Map.Layers.Add(layer);
+						var layers = e.NewItems.Cast<ILayer>();
+						foreach (var layer in layers.Where(layer => !_mapBox.Map.Layers.Contains(layer)))
+						{
+							_mapBox.Map.Layers.Add(layer);
+						}
+
 					}
-					
-				}
 					break;
 				case NotifyCollectionChangedAction.Remove:
-				{
-					var layers = e.OldItems.Cast<ILayer>();
-					foreach (var layer in layers.Where(layer => _mapBox.Map.Layers.Contains(layer)))
 					{
-						_mapBox.Map.Layers.Remove(layer);
+						var layers = e.OldItems.Cast<ILayer>();
+						foreach (var layer in layers.Where(layer => _mapBox.Map.Layers.Contains(layer)))
+						{
+							_mapBox.Map.Layers.Remove(layer);
+						}
 					}
-				}
 					break;
 				case NotifyCollectionChangedAction.Reset:
 					_mapBox.Map.Layers.Clear();
