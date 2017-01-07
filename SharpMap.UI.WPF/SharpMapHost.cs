@@ -72,7 +72,11 @@ namespace SharpMap.UI.WPF
 			DependencyProperty.Register("MapCenter", typeof(Coordinate), typeof(SharpMapHost),
 				new PropertyMetadata(SetMapCenterCallback));
 
-		// Dependency Property to store MaxCenter.
+		// Dependency Property to store MapMaxZoom.
+		public static readonly DependencyProperty MapMaxZoomProperty =
+			DependencyProperty.Register("MapMaxZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapMaxZoomCallback));
+
+		// Dependency Property to store MapZoom.
 		public static readonly DependencyProperty MapZoomProperty =
 			DependencyProperty.Register("MapZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapZoomCallback));
 
@@ -189,6 +193,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return _mapBox.Map.Center; }
 			set { SetValue(MapCenterProperty, value); }
+		}
+
+		public double MapMaxZoom
+		{
+			get { return _mapBox.Map.MaximumZoom; }
+			set { SetValue(MapMaxZoomProperty, value); }
 		}
 
 		public double MapZoom
@@ -371,6 +381,23 @@ namespace SharpMap.UI.WPF
 				return;
 
 			mapBox.Map.SRID = srId;
+			mapBox.Refresh();
+		}
+
+		private static void SetMapMaxZoomCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+			{
+				return;
+			}
+
+			var maxZoom = (double)args.NewValue;
+			var mapBox = host._mapBox;
+			if (Math.Abs(mapBox.Map.MaximumZoom - maxZoom) < 0.0001)
+				return;
+
+			mapBox.Map.MaximumZoom = maxZoom;
 			mapBox.Refresh();
 		}
 
