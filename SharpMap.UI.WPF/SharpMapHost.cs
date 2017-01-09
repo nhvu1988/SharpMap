@@ -103,6 +103,9 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty FeatureRightClickedCommandProperty =
 			DependencyProperty.Register("FeatureRightClickedCommand", typeof(ICommand), typeof(SharpMapHost));
 
+		public static readonly DependencyProperty OnMouseClickedCommandProperty =
+			DependencyProperty.Register("OnMouseClickedCommand", typeof(ICommand), typeof(SharpMapHost));
+
 		private readonly MapBox _mapBox;
 
 		private VectorLayer _editLayer;
@@ -138,6 +141,23 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseMove += MapBoxOnMouseMove;
 			_mapBox.GeometryDefined += geometry => DefinedGeometry = geometry;
 			_mapBox.MapZoomChanged += zoom => MapZoom = zoom;
+			_mapBox.MouseUp += MapBox_OnMouseUp;
+			_mapBox.MouseDown += MapBox_OnMouseDown;
+		}
+
+		private readonly int[] _mouseDownPosition = {0, 0};
+
+		private void MapBox_OnMouseDown(Coordinate worldPos, MouseEventArgs mousePos)
+		{
+			_mouseDownPosition[0] = mousePos.X;
+			_mouseDownPosition[1] = mousePos.Y;
+		}
+
+		private void MapBox_OnMouseUp(Coordinate worldPos, MouseEventArgs args)
+		{
+			// check position on mouse down and on mouse up
+			if (_mouseDownPosition[0] == args.X && _mouseDownPosition[1] == args.Y)
+				OnMouseClickedCommand?.Execute(worldPos);
 		}
 
 		public ObservableCollection<ILayer> MapLayers
@@ -228,6 +248,12 @@ namespace SharpMap.UI.WPF
 			get { return GetValue(FeatureRightClickedCommandProperty) as ICommand; }
 
 			set { SetValue(FeatureRightClickedCommandProperty, value); }
+		}
+
+		public ICommand OnMouseClickedCommand
+		{
+			get { return GetValue(OnMouseClickedCommandProperty) as ICommand ; }
+			set { SetValue(OnMouseClickedCommandProperty, value); }
 		}
 
 		/// <summary>
