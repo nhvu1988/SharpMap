@@ -821,7 +821,8 @@ namespace SharpMap.Forms
             {
                 _map.MapNewTileAvaliable -= HandleMapNewTileAvaliable;
                 _map.RefreshNeeded -= HandleRefreshNeeded;
-            }
+				_map.Dispose();
+			}
             LostFocus -= HandleMapBoxLostFocus;
 
             if (_mousePreviewFilter != null)
@@ -829,8 +830,6 @@ namespace SharpMap.Forms
 
             lock (_mapLocker)
             {
-                _map = null;
-
                 if (_imageStatic != null)
                 {
                     _imageStatic.Dispose();

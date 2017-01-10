@@ -93,6 +93,7 @@ namespace SharpMap.Layers
 						var gdalDataset = Gdal.OpenShared(file, Access.GA_ReadOnly);
 						var geoTrans = new double[6];
 						gdalDataset.GetGeoTransform(geoTrans);
+						gdalDataset.Dispose();
 						_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
 						_envelope = _worldFile.ToGroundBounds(_image.Width, _image.Height).EnvelopeInternal;
 						_openDatasets.Add(file, new CacheHolder()

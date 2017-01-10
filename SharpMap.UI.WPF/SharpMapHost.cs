@@ -143,6 +143,20 @@ namespace SharpMap.UI.WPF
 			_mapBox.MapZoomChanged += zoom => MapZoom = zoom;
 			_mapBox.MouseUp += MapBox_OnMouseUp;
 			_mapBox.MouseDown += MapBox_OnMouseDown;
+			this.Unloaded += SharpMapHost_Unloaded;
+		}
+
+		private void SharpMapHost_Unloaded(object sender, RoutedEventArgs e)
+		{
+			this.Dispose();
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			MapLayers?.Clear();
+			KeyDown -= OnKeyDown;
+			_mapBox.Dispose();
+			base.Dispose(disposing);
 		}
 
 		private readonly int[] _mouseDownPosition = {0, 0};
@@ -525,24 +539,26 @@ namespace SharpMap.UI.WPF
 			{
 				case NotifyCollectionChangedAction.Add:
 					{
-						var layers = e.NewItems.Cast<ILayer>();
+						var layers = e.NewItems.Cast<Layer>();
 						foreach (var layer in layers.Where(layer => !_mapBox.Map.Layers.Contains(layer)))
 						{
 							_mapBox.Map.Layers.Add(layer);
 						}
-
 					}
 					break;
 				case NotifyCollectionChangedAction.Remove:
 					{
-						var layers = e.OldItems.Cast<ILayer>();
+						var layers = e.OldItems.Cast<Layer>();
 						foreach (var layer in layers.Where(layer => _mapBox.Map.Layers.Contains(layer)))
 						{
 							_mapBox.Map.Layers.Remove(layer);
+							layer.Dispose();
 						}
 					}
 					break;
 				case NotifyCollectionChangedAction.Reset:
+					foreach(var layer in _mapBox.Map.Layers)
+						((Layer) layer).Dispose();
 					_mapBox.Map.Layers.Clear();
 					break;
 			}
@@ -575,11 +591,6 @@ namespace SharpMap.UI.WPF
 				PropertyChanged(this, new PropertyChangedEventArgs("CurrentMouseCoordinate"));
 				PropertyChanged(this, new PropertyChangedEventArgs("CurrentMouseCoordinateString"));
 			}
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			_mapBox.Dispose();
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
