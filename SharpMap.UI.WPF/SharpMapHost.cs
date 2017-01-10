@@ -577,6 +577,11 @@ namespace SharpMap.UI.WPF
 			}
 		}
 
+		protected override void Dispose(bool disposing)
+		{
+			_mapBox.Dispose();
+		}
+
 		public event PropertyChangedEventHandler PropertyChanged;
 
 	}
