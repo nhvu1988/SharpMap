@@ -552,13 +552,10 @@ namespace SharpMap.UI.WPF
 						foreach (var layer in layers.Where(layer => _mapBox.Map.Layers.Contains(layer)))
 						{
 							_mapBox.Map.Layers.Remove(layer);
-							layer.Dispose();
 						}
 					}
 					break;
 				case NotifyCollectionChangedAction.Reset:
-					foreach(var layer in _mapBox.Map.Layers)
-						((Layer) layer).Dispose();
 					_mapBox.Map.Layers.Clear();
 					break;
 			}
