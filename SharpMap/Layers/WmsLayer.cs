@@ -84,13 +84,13 @@ namespace SharpMap.Layers
         //private readonly string _capabilitiesUrl;
         private Envelope _envelope;
 
-        /// <summary>
-        /// Initializes a new layer, and downloads and parses the service description
-        /// </summary>
-        /// <remarks>In and ASP.NET application the service description is automatically cached for 24 hours when not specified</remarks>
-        /// <param name="layername">Layername</param>
-        /// <param name="url">Url of WMS server</param>
-        public WmsLayer(string layername, string url)
+	    /// <summary>
+		/// Initializes a new layer, and downloads and parses the service description
+		/// </summary>
+		/// <remarks>In and ASP.NET application the service description is automatically cached for 24 hours when not specified</remarks>
+		/// <param name="layername">Layername</param>
+		/// <param name="url">Url of WMS server</param>
+		public WmsLayer(string layername, string url)
             : this(layername, url, new TimeSpan(24, 0, 0))
         {
         }
@@ -199,7 +199,9 @@ namespace SharpMap.Layers
             }
             _layerList = new Collection<string>();
             _stylesList = new Collection<string>();
-        }
+			OptionalParams = new List<KeyValuePair<string, string>>();
+
+		}
 
         /// <summary>
         /// Can be used to force the OnlineResourceUrl for services that return incorrect (often internal) onlineresources
@@ -312,11 +314,16 @@ namespace SharpMap.Layers
 
         }
 
+		/// <summary>
+		/// Gets the list of enabled layers
+		/// </summary>
+		public IList<KeyValuePair<string, string>> OptionalParams { get; }
 
-        /// <summary>
-        /// Gets the service description from this server
-        /// </summary>
-        public Capabilities.WmsServiceDescription ServiceDescription
+
+	    /// <summary>
+		/// Gets the service description from this server
+		/// </summary>
+		public Capabilities.WmsServiceDescription ServiceDescription
         {
             get { return _wmsClient.ServiceDescription; }
         }
@@ -786,7 +793,14 @@ namespace SharpMap.Layers
                 //var background = Uri.EscapeDataString(ColorTranslator.ToHtml(_bgColor));
                 strReq.AppendFormat("&BGCOLOR={0}", ToHexValue(_bgColor));
             }
-            return strReq.ToString();
+	        if (OptionalParams.Count > 0)
+	        {
+		        foreach (var param in OptionalParams)
+		        {
+					strReq.AppendFormat("&{0}={1}", param.Key, param.Value);
+				}
+			}
+			return strReq.ToString();
         }
 
         /// <summary>
