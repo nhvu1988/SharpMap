@@ -315,7 +315,7 @@ namespace SharpMap.Layers
         }
 
 		/// <summary>
-		/// Gets the list of enabled layers
+		/// Gets the list of optional params passing on request
 		/// </summary>
 		public IList<KeyValuePair<string, string>> OptionalParams { get; }
 
