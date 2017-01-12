@@ -142,7 +142,6 @@ namespace SharpMap.UI.WPF
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
 
 			KeyDown += OnKeyDown;
-			Unloaded += SharpMapHost_Unloaded;
 		}
 
 		private void MapBoxOnMapZoomChanged(double zoom)
@@ -176,11 +175,6 @@ namespace SharpMap.UI.WPF
 		private void MapBoxOnMapRefreshing(object sender, EventArgs eventArgs)
 		{
 			IsMapRendering = true;
-		}
-
-		private void SharpMapHost_Unloaded(object sender, RoutedEventArgs e)
-		{
-			Dispose();
 		}
 
 		protected override void Dispose(bool disposing)
