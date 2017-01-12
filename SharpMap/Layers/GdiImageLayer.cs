@@ -154,7 +154,7 @@ namespace SharpMap.Layers
         protected override void ReleaseManagedResources()
         {
             base.ReleaseManagedResources();
-            _image.Dispose();
+            _image?.Dispose();
         }
 
         /// <summary>
