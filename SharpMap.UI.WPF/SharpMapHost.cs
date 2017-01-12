@@ -16,32 +16,25 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
-using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using System.Drawing;
+using System.Linq;
+using System.Windows;
+using System.Windows.Forms.Integration;
+using System.Windows.Input;
+using GeoAPI.Geometries;
+using SharpMap.Data.Providers;
+using SharpMap.Forms;
+using SharpMap.Layers;
+using SharpMap.Rendering.Decoration;
+using SharpMap.Rendering.Decoration.ScaleBar;
 using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
 
 namespace SharpMap.UI.WPF
 {
-	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
-	using System.Collections.Specialized;
-	using System.Drawing;
-	using System.Linq;
-	using System.Windows;
-	using System.Windows.Forms.Integration;
-	using System.Windows.Input;
-
-	using GeoAPI.Geometries;
-
-	using Data.Providers;
-	using Forms;
-	using Layers;
-	using Rendering.Decoration;
-	using Rendering.Decoration.ScaleBar;
-
-	using KeyEventArgs = KeyEventArgs;
-	using MouseEventArgs = MouseEventArgs;
-
 	/// <summary>
 	/// Extends WindowsFormsHost and encapsulates SharpMap specific code.
 	/// </summary>
@@ -106,6 +99,10 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty OnMouseClickedCommandProperty =
 			DependencyProperty.Register("OnMouseClickedCommand", typeof(ICommand), typeof(SharpMapHost));
 
+		public static readonly DependencyProperty IsMapRenderingProperty =
+			DependencyProperty.Register("IsMapRendering", typeof(bool), typeof(SharpMapHost));
+
+		
 		private readonly MapBox _mapBox;
 
 		private VectorLayer _editLayer;
@@ -136,25 +133,66 @@ namespace SharpMap.UI.WPF
 			_mapBox.Map.Decorations.Add(scaleBar);
 			_mapBox.PanOnClick = false;
 
-			KeyDown += OnKeyDown;
-
 			_mapBox.MouseMove += MapBoxOnMouseMove;
-			_mapBox.GeometryDefined += geometry => DefinedGeometry = geometry;
-			_mapBox.MapZoomChanged += zoom => MapZoom = zoom;
+			_mapBox.GeometryDefined += MapBoxOnGeometryDefined;
+			_mapBox.MapZoomChanged += MapBoxOnMapZoomChanged;
 			_mapBox.MouseUp += MapBox_OnMouseUp;
 			_mapBox.MouseDown += MapBox_OnMouseDown;
-			this.Unloaded += SharpMapHost_Unloaded;
+			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
+			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
+
+			KeyDown += OnKeyDown;
+			Unloaded += SharpMapHost_Unloaded;
+		}
+
+		private void MapBoxOnMapZoomChanged(double zoom)
+		{
+			MapZoom = zoom;
+		}
+
+		private void MapBoxOnGeometryDefined(IGeometry geometry)
+		{
+			DefinedGeometry = geometry;
+		}
+
+		private void MapBoxOnMapRefreshed(object sender, EventArgs eventArgs)
+		{
+			if (Dispatcher.CheckAccess())
+			{
+				// This thread has access so it can update the UI thread.
+				IsMapRendering = false;
+			}
+			else
+			{
+				// This thread does not have access to the UI thread.
+				// Place the update method on the Dispatcher of the UI thread.
+				Dispatcher.Invoke(new Action(() =>
+				{
+					IsMapRendering = false;
+				}));
+			}
+		}
+
+		private void MapBoxOnMapRefreshing(object sender, EventArgs eventArgs)
+		{
+			IsMapRendering = true;
 		}
 
 		private void SharpMapHost_Unloaded(object sender, RoutedEventArgs e)
 		{
-			this.Dispose();
+			Dispose();
 		}
 
 		protected override void Dispose(bool disposing)
 		{
-			MapLayers?.Clear();
 			KeyDown -= OnKeyDown;
+			_mapBox.MouseMove -= MapBoxOnMouseMove;
+			_mapBox.GeometryDefined -= MapBoxOnGeometryDefined;
+			_mapBox.MapZoomChanged -= MapBoxOnMapZoomChanged;
+			_mapBox.MouseUp -= MapBox_OnMouseUp;
+			_mapBox.MouseDown -= MapBox_OnMouseDown;
+			_mapBox.MapRefreshing -= MapBoxOnMapRefreshing;
+			_mapBox.MapRefreshed -= MapBoxOnMapRefreshed;
 			_mapBox.Dispose();
 			base.Dispose(disposing);
 		}
@@ -270,6 +308,12 @@ namespace SharpMap.UI.WPF
 			set { SetValue(OnMouseClickedCommandProperty, value); }
 		}
 
+		public bool IsMapRendering
+		{
+			get { return (bool) GetValue(IsMapRenderingProperty); }
+			set { SetValue(IsMapRenderingProperty, value); }
+		}
+
 		/// <summary>
 		/// Gets called when changes on MapLayers
 		/// </summary>
@@ -322,6 +366,7 @@ namespace SharpMap.UI.WPF
 			var layer = args.NewValue as Layer;
 			if (layer != null)
 			{
+				mapBox.Map.BackgroundLayer.Clear();
 				mapBox.Map.BackgroundLayer.Add(layer);
 			}
 
@@ -591,6 +636,5 @@ namespace SharpMap.UI.WPF
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
-
 	}
 }

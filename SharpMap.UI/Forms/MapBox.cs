@@ -253,10 +253,15 @@ namespace SharpMap.Forms
         /// </summary>
         public event MouseEventHandler MouseDrag;
 
-        /// <summary>
-        /// Fired when the map has been refreshed
-        /// </summary>
-        public event EventHandler MapRefreshed;
+		/// <summary>
+		/// Fired when the map start refreshing
+		/// </summary>
+		public event EventHandler MapRefreshing;
+
+		/// <summary>
+		/// Fired when the map has been refreshed
+		/// </summary>
+		public event EventHandler MapRefreshed;
 
         /// <summary>
         /// Fired when the map is about to change
@@ -1161,19 +1166,19 @@ namespace SharpMap.Forms
                 LastRefreshTime = _watch.Elapsed;
 #endif
 
-                try
-                {
-                    if (MapRefreshed != null)
-                    {
-                        MapRefreshed(this, null);
-                    }
-                }
-                catch (Exception ee)
-                {
-                    //Trap errors that occured when calling the eventhandlers
-                    _logger.Warn("Exception while calling eventhandler", ee);
-                }
-            }
+				try
+				{
+					if (MapRefreshed != null)
+					{
+						MapRefreshed(this, null);
+					}
+				}
+				catch (Exception ee)
+				{
+					//Trap errors that occured when calling the eventhandlers
+					_logger.Warn("Exception while calling eventhandler", ee);
+				}
+			}
         }
 
         private void UpdateImage(bool forceRefresh)
@@ -1291,7 +1296,9 @@ namespace SharpMap.Forms
                         _image = null;
                     else
                     {
-                        Cursor c = Cursor;
+	                    MapRefreshing?.Invoke(this, null);
+
+	                    Cursor c = Cursor;
                         if (_setActiveToolNoneDuringRedraw)
                         {
                             Cursor = Cursors.WaitCursor;
@@ -1301,7 +1308,8 @@ namespace SharpMap.Forms
                         {
                             Cursor = c;
                         }
-                    }
+						
+					}
                 }
             }
             catch (Exception ex)
