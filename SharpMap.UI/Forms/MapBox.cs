@@ -710,7 +710,7 @@ namespace SharpMap.Forms
         /// <param name="cea">a cancel indicator</param>
         protected virtual void OnActiveToolChanging(Tools toolPre, Tools toolNew, CancelEventArgs cea)
         {
-            if (CustomTool != null)
+            if (CustomTool != null && toolNew != Tools.Custom)
                 CustomTool.Enabled = false;
             var handler = ActiveToolChanging;
             if (handler != null)
@@ -723,7 +723,7 @@ namespace SharpMap.Forms
         /// <param name="activeTool">The tool</param>
         protected virtual void OnActiveToolChanged(Tools activeTool)
         {
-            var handler = ActiveToolChanged;
+			var handler = ActiveToolChanged;
             if (handler != null)
                 handler(activeTool);
         }
