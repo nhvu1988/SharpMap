@@ -28,6 +28,7 @@ using System.Windows.Input;
 using GeoAPI.Geometries;
 using SharpMap.Data.Providers;
 using SharpMap.Forms;
+using SharpMap.Forms.Tools;
 using SharpMap.Layers;
 using SharpMap.Rendering.Decoration;
 using SharpMap.Rendering.Decoration.ScaleBar;
@@ -45,7 +46,7 @@ namespace SharpMap.UI.WPF
 			DependencyProperty.Register("MapLayers", typeof(ObservableCollection<ILayer>), typeof(SharpMapHost),
 				new PropertyMetadata(SetMapLayersCallback));
 
-		// Dependency Property store store BackgroundLayer.
+		// Dependency Property to store BackgroundLayer.
 		public static readonly DependencyProperty BackgroundLayerProperty =
 			DependencyProperty.Register("BackgroundLayer", typeof(Layer), typeof(SharpMapHost),
 				new PropertyMetadata(SetBackgroundLayerCallback));
@@ -87,6 +88,11 @@ namespace SharpMap.UI.WPF
 			DependencyProperty.Register("MapSRID", typeof(int), typeof(SharpMapHost),
 				new PropertyMetadata(SetMapSRIDCallback));
 
+		// Dependency Property to store MapCustomTool.
+		public static readonly DependencyProperty MapCustomToolProperty =
+			DependencyProperty.Register("MapCustomTool", typeof(MapTool), typeof(SharpMapHost),
+				new PropertyMetadata(SetMapCustomToolCallback));
+
 		// Dependency Property used when a new geometry is defined.
 		public static readonly DependencyProperty DefinedGeometryProperty =
 			DependencyProperty.Register("DefinedGeometry", typeof(IGeometry), typeof(SharpMapHost),
@@ -96,12 +102,19 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty FeatureRightClickedCommandProperty =
 			DependencyProperty.Register("FeatureRightClickedCommand", typeof(ICommand), typeof(SharpMapHost));
 
+		// Dependency Property used when left click on map.
 		public static readonly DependencyProperty OnMouseClickedCommandProperty =
 			DependencyProperty.Register("OnMouseClickedCommand", typeof(ICommand), typeof(SharpMapHost));
 
+		// Dependency Property used when double click on map.
+		public static readonly DependencyProperty OnMouseDoubleClickedCommandProperty =
+			DependencyProperty.Register("OnMouseDoubleClickedCommand", typeof(ICommand), typeof(SharpMapHost));
+
+		// Dependency Property to store IsMapRendering.
 		public static readonly DependencyProperty IsMapRenderingProperty =
 			DependencyProperty.Register("IsMapRendering", typeof(bool), typeof(SharpMapHost));
 
+		// Dependency Property to store IsMapVisible.
 		public static readonly DependencyProperty IsMapVisibleProperty =
 			DependencyProperty.Register("IsMapVisible", typeof(bool), typeof(SharpMapHost));
 
@@ -138,13 +151,25 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseMove += MapBoxOnMouseMove;
 			_mapBox.GeometryDefined += MapBoxOnGeometryDefined;
 			_mapBox.MapZoomChanged += MapBoxOnMapZoomChanged;
-			_mapBox.MouseUp += MapBox_OnMouseUp;
-			_mapBox.MouseDown += MapBox_OnMouseDown;
+			_mapBox.MouseUp += MapBoxOnMouseUp;
+			_mapBox.MouseDown += MapBoxOnMouseDown;
+			_mapBox.MouseDoubleClick += MapBoxOnMouseDoubleClick;
 			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
+			_mapBox.ActiveToolChanged += MapBoxOnActiveToolChanged;
 
 			IsVisibleChanged += OnIsVisibleChanged;
 			KeyDown += OnKeyDown;
+		}
+
+		private void MapBoxOnActiveToolChanged(MapBox.Tools tool)
+		{
+			ActiveTool = tool;
+		}
+
+		private void MapBoxOnMouseDoubleClick(object sender, MouseEventArgs mouseEventArgs)
+		{
+			OnMouseDoubleClickedCommand?.Execute(CurrentMouseCoordinate);
 		}
 
 		private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
@@ -191,8 +216,8 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseMove -= MapBoxOnMouseMove;
 			_mapBox.GeometryDefined -= MapBoxOnGeometryDefined;
 			_mapBox.MapZoomChanged -= MapBoxOnMapZoomChanged;
-			_mapBox.MouseUp -= MapBox_OnMouseUp;
-			_mapBox.MouseDown -= MapBox_OnMouseDown;
+			_mapBox.MouseUp -= MapBoxOnMouseUp;
+			_mapBox.MouseDown -= MapBoxOnMouseDown;
 			_mapBox.MapRefreshing -= MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed -= MapBoxOnMapRefreshed;
 			_mapBox.Dispose();
@@ -201,13 +226,13 @@ namespace SharpMap.UI.WPF
 
 		private readonly int[] _mouseDownPosition = {0, 0};
 
-		private void MapBox_OnMouseDown(Coordinate worldPos, MouseEventArgs mousePos)
+		private void MapBoxOnMouseDown(Coordinate worldPos, MouseEventArgs mousePos)
 		{
 			_mouseDownPosition[0] = mousePos.X;
 			_mouseDownPosition[1] = mousePos.Y;
 		}
 
-		private void MapBox_OnMouseUp(Coordinate worldPos, MouseEventArgs args)
+		private void MapBoxOnMouseUp(Coordinate worldPos, MouseEventArgs args)
 		{
 			// check position on mouse down and on mouse up
 			if (_mouseDownPosition[0] == args.X && _mouseDownPosition[1] == args.Y)
@@ -287,6 +312,12 @@ namespace SharpMap.UI.WPF
 			set { SetValue(MapSRIDProperty, value); }
 		}
 
+		public IMapTool MapCustomTool
+		{
+			get { return _mapBox.CustomTool; }
+			set { SetValue(MapCustomToolProperty, value); }
+		}
+
 		public IGeometry DefinedGeometry
 		{
 			get { return (IGeometry)GetValue(DefinedGeometryProperty); }
@@ -308,6 +339,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return GetValue(OnMouseClickedCommandProperty) as ICommand ; }
 			set { SetValue(OnMouseClickedCommandProperty, value); }
+		}
+
+		public ICommand OnMouseDoubleClickedCommand
+		{
+			get { return GetValue(OnMouseDoubleClickedCommandProperty) as ICommand; }
+			set { SetValue(OnMouseDoubleClickedCommandProperty, value); }
 		}
 
 		public bool IsMapRendering
@@ -399,7 +436,6 @@ namespace SharpMap.UI.WPF
 			mapBox.ActiveTool = newTool;
 		}
 
-
 		/// <summary>
 		/// Gets called when changes on MaxExtent
 		/// </summary>
@@ -475,6 +511,20 @@ namespace SharpMap.UI.WPF
 
 			mapBox.Map.SRID = srId;
 			mapBox.Refresh();
+		}
+
+		private static void SetMapCustomToolCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+				return;
+
+			var customTool = (MapTool)args.NewValue;
+			var mapBox = host._mapBox;
+			if (mapBox.CustomTool == customTool)
+				return;
+
+			mapBox.CustomTool = customTool;
 		}
 
 		private static void SetMapMaxZoomCallback(object sender, DependencyPropertyChangedEventArgs args)
