@@ -118,6 +118,10 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty IsMapVisibleProperty =
 			DependencyProperty.Register("IsMapVisible", typeof(bool), typeof(SharpMapHost));
 
+		// Dependency Property to store IsMapVisible.
+		public static readonly DependencyProperty IsMouseDownProperty =
+			DependencyProperty.Register("IsMouseDown", typeof(bool), typeof(SharpMapHost));
+
 		private readonly MapBox _mapBox;
 
 		private VectorLayer _editLayer;
@@ -230,6 +234,7 @@ namespace SharpMap.UI.WPF
 		{
 			_mouseDownPosition[0] = mousePos.X;
 			_mouseDownPosition[1] = mousePos.Y;
+			IsMouseDown = true;
 		}
 
 		private void MapBoxOnMouseUp(Coordinate worldPos, MouseEventArgs args)
@@ -237,6 +242,7 @@ namespace SharpMap.UI.WPF
 			// check position on mouse down and on mouse up
 			if (_mouseDownPosition[0] == args.X && _mouseDownPosition[1] == args.Y)
 				OnMouseClickedCommand?.Execute(worldPos);
+			IsMouseDown = false;
 		}
 
 		public ObservableCollection<ILayer> MapLayers
@@ -357,6 +363,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return (bool)GetValue(IsMapVisibleProperty); }
 			set { SetValue(IsMapVisibleProperty, value); }
+		}
+
+		public bool IsMouseDown
+		{
+			get { return (bool)GetValue(IsMouseDownProperty); }
+			set { SetValue(IsMouseDownProperty, value); }
 		}
 
 		/// <summary>
