@@ -102,7 +102,9 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty IsMapRenderingProperty =
 			DependencyProperty.Register("IsMapRendering", typeof(bool), typeof(SharpMapHost));
 
-		
+		public static readonly DependencyProperty IsMapVisibleProperty =
+			DependencyProperty.Register("IsMapVisible", typeof(bool), typeof(SharpMapHost));
+
 		private readonly MapBox _mapBox;
 
 		private VectorLayer _editLayer;
@@ -141,7 +143,13 @@ namespace SharpMap.UI.WPF
 			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
 
+			IsVisibleChanged += OnIsVisibleChanged;
 			KeyDown += OnKeyDown;
+		}
+
+		private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			IsMapVisible = (bool) args.NewValue;
 		}
 
 		private void MapBoxOnMapZoomChanged(double zoom)
@@ -306,6 +314,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return (bool) GetValue(IsMapRenderingProperty); }
 			set { SetValue(IsMapRenderingProperty, value); }
+		}
+
+		public bool IsMapVisible
+		{
+			get { return (bool)GetValue(IsMapVisibleProperty); }
+			set { SetValue(IsMapVisibleProperty, value); }
 		}
 
 		/// <summary>
