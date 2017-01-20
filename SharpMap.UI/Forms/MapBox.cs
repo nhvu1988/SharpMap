@@ -2372,6 +2372,38 @@ namespace SharpMap.Forms
             return layersToQuery;
         }
 
+		/// <summary>
+		/// Finish drawing polygon state
+		/// </summary>
+		public void FinishDrawingPolygon()
+	    {
+			if (_map == null || _activeTool != Tools.DrawPolygon)
+				return;
+
+			if (_pointArray != null && GeometryDefined != null)
+			{
+				_pointArray.RemoveAt(_pointArray.Count-1);
+				var cl = new NetTopologySuite.Geometries.CoordinateList(_pointArray, false);
+				cl.CloseRing();
+				GeometryDefined(Map.Factory.CreatePolygon(Map.Factory.CreateLinearRing(NetTopologySuite.Geometries.CoordinateArrays.AtLeastNCoordinatesOrNothing(4, cl.ToCoordinateArray())), null));
+			}
+			ActiveTool = Tools.Pan;
+			Refresh();
+		}
+
+	    /// <summary>
+	    /// Cancel drawing polygon state
+	    /// </summary>
+	    public void CancelDrawingPolygon()
+	    {
+			if (_map == null || _activeTool != Tools.DrawPolygon)
+				return;
+
+		    GeometryDefined?.Invoke(null);
+		    ActiveTool = Tools.Pan;
+			Refresh();
+		}
+
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
             // call base function
@@ -2390,7 +2422,6 @@ namespace SharpMap.Forms
                 if (_currentTool.DoMouseDoubleClick(_map.ImageToWorld(e.Location), e))
                     return;
             }
-
 
             if (_activeTool == Tools.DrawPolygon)
             {
@@ -2412,7 +2443,6 @@ namespace SharpMap.Forms
                 ActiveTool = Tools.Pan;
             }
         }
-
 
         private static void GetBounds(Coordinate p1, Coordinate p2,
                                       out Coordinate lowerLeft, out Coordinate upperRight)

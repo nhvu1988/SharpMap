@@ -48,7 +48,7 @@ namespace SharpMap.UI.WPF
 
 		// Dependency Property to store BackgroundLayer.
 		public static readonly DependencyProperty BackgroundLayerProperty =
-			DependencyProperty.Register("BackgroundLayer", typeof(Layer), typeof(SharpMapHost),
+			DependencyProperty.Register("BackgroundLayer", typeof(ILayer), typeof(SharpMapHost),
 				new PropertyMetadata(SetBackgroundLayerCallback));
 
 		// Dependency Property to store ActiveTool.
@@ -121,6 +121,12 @@ namespace SharpMap.UI.WPF
 		// Dependency Property to store IsMapVisible.
 		public static readonly DependencyProperty IsMouseDownProperty =
 			DependencyProperty.Register("IsMouseDown", typeof(bool), typeof(SharpMapHost));
+
+		public static readonly DependencyProperty FinishDrawingGeometryEventProperty =
+			DependencyProperty.Register("FinishDrawingGeometryEvent", typeof(bool), typeof(SharpMapHost), new PropertyMetadata(FinishDrawingGeometryEventCalled));
+
+		public static readonly DependencyProperty CancelDrawingGeometryEventProperty =
+			DependencyProperty.Register("CancelDrawingGeometryEvent", typeof(bool), typeof(SharpMapHost), new PropertyMetadata(CancelDrawingGeometryEventCalled));
 
 		private readonly MapBox _mapBox;
 
@@ -251,9 +257,9 @@ namespace SharpMap.UI.WPF
 			set { SetValue(MapLayersProperty, value); }
 		}
 
-		public Layer BackgroundLayer
+		public ILayer BackgroundLayer
 		{
-			get { return (Layer)GetValue(BackgroundLayerProperty); }
+			get { return (ILayer)GetValue(BackgroundLayerProperty); }
 			set { SetValue(BackgroundLayerProperty, value); }
 		}
 
@@ -420,7 +426,7 @@ namespace SharpMap.UI.WPF
 			}
 
 			var mapBox = host._mapBox;
-			var layer = args.NewValue as Layer;
+			var layer = args.NewValue as ILayer;
 			if (layer != null)
 			{
 				mapBox.Map.BackgroundLayer.Clear();
@@ -573,7 +579,6 @@ namespace SharpMap.UI.WPF
 			mapBox.Refresh();
 		}
 
-
 		/// <summary>
 		/// Gets called when changes on GeometryDefined
 		/// </summary>
@@ -603,6 +608,22 @@ namespace SharpMap.UI.WPF
 			}
 
 			host._mapBox.Refresh();
+		}
+
+		public bool FinishDrawingGeometryEvent { get; set; }
+
+		private static void FinishDrawingGeometryEventCalled(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			host?._mapBox.FinishDrawingPolygon();
+		}
+
+		public bool CancelDrawingGeometryEvent { get; set; }
+
+		private static void CancelDrawingGeometryEventCalled(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			host?._mapBox.CancelDrawingPolygon();
 		}
 
 		/// <summary>
