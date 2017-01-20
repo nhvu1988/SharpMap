@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using GeoAPI.Geometries;
@@ -144,7 +143,17 @@ namespace SharpMap.Layers
         {
         }
 
-        private static Client GetClient(string capabilitiesUrl, IWebProxy proxy, ICredentials credentials, TimeSpan cacheTime)
+		private MapViewport _lastMapViewPort;
+		private Image _lastImage;
+
+		/// <inheritdoc />
+		protected override void ReleaseUnmanagedResources()
+	    {
+			_lastImage?.Dispose();
+		    ReleaseManagedResources();
+	    }
+
+		private static Client GetClient(string capabilitiesUrl, IWebProxy proxy, ICredentials credentials, TimeSpan cacheTime)
         {
             Client result;
             if (!Web.HttpCacheUtility.TryGetValue("SharpMap_WmsClient_" + capabilitiesUrl, out result))
@@ -580,6 +589,8 @@ namespace SharpMap.Layers
             _mimeType = mimeType;
         }
 
+	    
+
         /// <summary>
         /// Renders the layer
         /// </summary>
@@ -587,7 +598,23 @@ namespace SharpMap.Layers
         /// <param name="map">Map which is rendered</param>
         public override void Render(Graphics g, MapViewport map)
         {
-            if (Logger.IsDebugEnabled)
+	        if (_lastMapViewPort != null 
+				&&Equals(map.Envelope, _lastMapViewPort.Envelope) 
+				&& Math.Abs(map.Zoom - _lastMapViewPort.Zoom) < double.Epsilon 
+				&& map.Size == _lastMapViewPort.Size)
+	        {
+				if (_imageAttributes != null)
+					g.DrawImage(_lastImage, new Rectangle(0, 0, _lastImage.Width, _lastImage.Height), 0, 0,
+						_lastImage.Width, _lastImage.Height, GraphicsUnit.Pixel, _imageAttributes);
+				else
+					g.DrawImage(_lastImage, Rectangle.FromLTRB(0, 0, map.Size.Width, map.Size.Height));
+				base.Render(g, map);
+		        return;
+	        }
+
+	        _lastMapViewPort = map;
+
+			if (Logger.IsDebugEnabled)
                 Logger.Debug("Rendering wmslayer: " + LayerName);
 
             Client.WmsOnlineResource resource = GetPreferredMethod();
@@ -640,7 +667,7 @@ namespace SharpMap.Layers
                             if (Logger.IsDebugEnabled)
                                 Logger.Debug("Content-Length: " + cLength);
 
-                            Image img;
+                            //Image img;
                             using (var ms = new MemoryStream())
                             {
                                 var buf = new byte[50000];
@@ -706,7 +733,7 @@ namespace SharpMap.Layers
                                     Logger.Debug("Have received: " + numRead);
 
                                 ms.Seek(0, SeekOrigin.Begin);
-                                img = Image.FromStream(ms);
+								_lastImage = Image.FromStream(ms);
                             }
 
 
@@ -714,12 +741,14 @@ namespace SharpMap.Layers
                                 Logger.Debug("Image read.. Drawing");
 
                             if (_imageAttributes != null)
-                                g.DrawImage(img, new Rectangle(0, 0, img.Width, img.Height), 0, 0,
-                                    img.Width, img.Height, GraphicsUnit.Pixel, _imageAttributes);
+                                g.DrawImage(_lastImage, new Rectangle(0, 0, _lastImage.Width, _lastImage.Height), 0, 0,
+									_lastImage.Width, _lastImage.Height, GraphicsUnit.Pixel, _imageAttributes);
                             else
-                                g.DrawImage(img, Rectangle.FromLTRB(0, 0, map.Size.Width, map.Size.Height));
+                                g.DrawImage(_lastImage, Rectangle.FromLTRB(0, 0, map.Size.Width, map.Size.Height));
 
-                            if (Logger.IsDebugEnabled)
+	                        //_lastImage = img;
+
+							if (Logger.IsDebugEnabled)
                                 Logger.Debug("Draw complete");
 
                             dataStream.Close();
