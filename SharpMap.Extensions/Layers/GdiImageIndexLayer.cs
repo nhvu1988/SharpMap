@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using Common.Logging;
 using GeoAPI.Geometries;
-using OSGeo.GDAL;
 using SharpMap.Data;
 using SharpMap.Data.Providers;
 
@@ -15,20 +13,11 @@ namespace SharpMap.Layers
 	/// </summary>
 	public class GdiImageIndexLayer : GdiImageLayer
 	{
-		class CacheHolder
-		{
-			public WorldFile WorldFile;
-			public Envelope Envelope;
-			public float Transparency;
-		}
-
 		private static readonly ILog _logger = LogManager.GetLogger(typeof(GdiImageIndexLayer));
 
 		private readonly ShapeFile _shapeFile;
 		private readonly string _fieldName;
 		private readonly string _fileName;
-		private readonly Envelope _extents;
-		private readonly Dictionary<string, CacheHolder> _openDatasets;
 
 		/// <summary>
 		/// Open a TileIndex shapefile
@@ -51,20 +40,15 @@ namespace SharpMap.Layers
 			_fileName = fileName;
 			_shapeFile = new ShapeFile(fileName, true);
 			_shapeFile.Open();
-			_extents = _shapeFile.GetExtents();
+			Envelope = _shapeFile.GetExtents();
 			_shapeFile.Close();
 			_fieldName = fieldName;
-			_openDatasets = new Dictionary<string, CacheHolder>();
 		}
 
-		public override Envelope Envelope
-		{
-			get
-			{
-				return _extents;
-			}
-		}
+		/// <inheritdoc />
+		public override Envelope Envelope { get; }
 
+		/// <inheritdoc />
 		public override void Render(Graphics g, MapViewport map)
 		{
 			try
@@ -72,6 +56,7 @@ namespace SharpMap.Layers
 				_shapeFile.Open();
 				var ds = new FeatureDataSet();
 				_shapeFile.ExecuteIntersectionQuery(map.Envelope, ds);
+				_shapeFile.Close();
 
 				var dt = ds.Tables[0];
 				foreach (FeatureDataRow fdr in dt.Rows)
@@ -87,30 +72,13 @@ namespace SharpMap.Layers
 						_logger.Debug("Drawing " + file);
 
 					_image = Image.FromFile(file);
-
-					if (!_openDatasets.ContainsKey(file))
-					{
-						var gdalDataset = Gdal.OpenShared(file, Access.GA_ReadOnly);
-						var geoTrans = new double[6];
-						gdalDataset.GetGeoTransform(geoTrans);
-						gdalDataset.Dispose();
-						_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
-						_envelope = _worldFile.ToGroundBounds(_image.Width, _image.Height).EnvelopeInternal;
-						_openDatasets.Add(file, new CacheHolder()
-						{
-							WorldFile = _worldFile,
-							Envelope = _envelope
-						});
-					}
-					else
-					{
-						CacheHolder hld = _openDatasets[file];
-						_worldFile = hld.WorldFile;
-						_envelope = hld.Envelope;
-					}
+					_envelope = fdr.Geometry.EnvelopeInternal;
+					var xres = (_envelope.MaxX - _envelope.MinX) / _image.Width;
+					var yres = (_envelope.MaxY - _envelope.MinY)/_image.Height;
+					var geoTrans = new[] { _envelope.MinX, xres, 0, _envelope.MaxY, 0, -yres };
+					_worldFile = new WorldFile(geoTrans[1], geoTrans[2], geoTrans[4], geoTrans[5], geoTrans[0], geoTrans[3]);
 
 					base.Render(g, map);
-					_envelope = null;
 					_image.Dispose();
 				}
 			}
@@ -120,6 +88,7 @@ namespace SharpMap.Layers
 			}
 		}
 
+		/// <inheritdoc />
 		protected override void ReleaseManagedResources()
 		{
 			_shapeFile.Dispose();
