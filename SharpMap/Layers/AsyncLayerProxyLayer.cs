@@ -369,7 +369,8 @@ namespace SharpMap.Layers
         {
             ((ITileAsyncLayer)this).Cancel();
             _imageAttributes.Dispose();
-        }
+			((Layer)_baseLayer)?.Dispose();
+		}
 
         void ICanQueryLayer.ExecuteIntersectionQuery(Envelope box, FeatureDataSet ds)
         {
