@@ -598,7 +598,7 @@ namespace SharpMap.Layers
         /// <param name="map">Map which is rendered</param>
         public override void Render(Graphics g, MapViewport map)
         {
-	        if (_lastMapViewPort != null 
+	        if (_lastImage != null && _lastMapViewPort != null 
 				&&Equals(map.Envelope, _lastMapViewPort.Envelope) 
 				&& Math.Abs(map.Zoom - _lastMapViewPort.Zoom) < double.Epsilon 
 				&& map.Size == _lastMapViewPort.Size)
