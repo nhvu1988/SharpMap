@@ -778,6 +778,7 @@ namespace SharpMap.Forms
             VariableLayerCollection.VariableLayerCollectionRequery += HandleVariableLayersRequery;
             _map.RefreshNeeded += HandleRefreshNeeded;
             _map.MapNewTileAvaliable += HandleMapNewTileAvaliable;
+			_map.MapViewOnChange += MapOnMapViewOnChange;
 
             _activeTool = Tools.None;
             LostFocus += HandleMapBoxLostFocus;
@@ -796,7 +797,13 @@ namespace SharpMap.Forms
             Application.AddMessageFilter(_mousePreviewFilter);
         }
 
-        protected override void OnSizeChanged(EventArgs e)
+	    private void MapOnMapViewOnChange()
+	    {
+		    OnMapCenterChanged(_map.Center);
+		    OnMapZoomChanged(_map.Zoom);
+		}
+
+	    protected override void OnSizeChanged(EventArgs e)
         {
             if (Map != null)
             {

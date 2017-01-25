@@ -144,10 +144,7 @@ namespace SharpMap.UI.WPF
 			_mapBox = new MapBox
 			{
 				BackColor = Color.White,
-				Map = new Map
-				{
-					SRID = 900913
-				}
+				Map = {SRID = 900913}
 			};
 			Child = _mapBox;
 
@@ -161,22 +158,21 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseMove += MapBoxOnMouseMove;
 			_mapBox.GeometryDefined += MapBoxOnGeometryDefined;
 			_mapBox.MapZoomChanged += MapBoxOnMapZoomChanged;
+			_mapBox.MapCenterChanged += MapBoxOnMapCenterChanged;
 			_mapBox.MouseUp += MapBoxOnMouseUp;
 			_mapBox.MouseDown += MapBoxOnMouseDown;
 			_mapBox.MouseDoubleClick += MapBoxOnMouseDoubleClick;
 			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
 			_mapBox.ActiveToolChanged += MapBoxOnActiveToolChanged;
-			_mapBox.Map.MapViewOnChange += MapOnMapViewOnChange;
 
 			IsVisibleChanged += OnIsVisibleChanged;
 			KeyDown += OnKeyDown;
 		}
 
-		private void MapOnMapViewOnChange()
+		private void MapBoxOnMapCenterChanged(Coordinate center)
 		{
-			MapCenter = _mapBox.Map.Center;
-			MapZoom = _mapBox.Map.Zoom;
+			MapCenter = center;
 		}
 
 		private void MapBoxOnActiveToolChanged(MapBox.Tools tool)
@@ -229,15 +225,20 @@ namespace SharpMap.UI.WPF
 
 		protected override void Dispose(bool disposing)
 		{
-			KeyDown -= OnKeyDown;
 			_mapBox.MouseMove -= MapBoxOnMouseMove;
 			_mapBox.GeometryDefined -= MapBoxOnGeometryDefined;
 			_mapBox.MapZoomChanged -= MapBoxOnMapZoomChanged;
+			_mapBox.MapCenterChanged -= MapBoxOnMapCenterChanged;
 			_mapBox.MouseUp -= MapBoxOnMouseUp;
 			_mapBox.MouseDown -= MapBoxOnMouseDown;
+			_mapBox.MouseDoubleClick -= MapBoxOnMouseDoubleClick;
 			_mapBox.MapRefreshing -= MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed -= MapBoxOnMapRefreshed;
+			_mapBox.ActiveToolChanged -= MapBoxOnActiveToolChanged;
 			_mapBox.Dispose();
+
+			KeyDown -= OnKeyDown;
+			IsVisibleChanged -= OnIsVisibleChanged;
 			base.Dispose(disposing);
 		}
 
@@ -289,21 +290,18 @@ namespace SharpMap.UI.WPF
 		public Coordinate CurrentMouseCoordinate
 		{
 			get { return (Coordinate)GetValue(CurrentMouseCoordinateProperty); }
-
 			set { SetValue(CurrentMouseCoordinateProperty, value); }
 		}
 
 		public Envelope MaxExtent
 		{
 			get { return (Envelope)GetValue(MaxExtentProperty); }
-
 			set { SetValue(MaxExtentProperty, value); }
 		}
 
 		public Envelope MapExtent
 		{
 			get { return (Envelope)GetValue(MapExtentProperty); }
-
 			set
 			{
 				if (Equals(MapExtent, value))
