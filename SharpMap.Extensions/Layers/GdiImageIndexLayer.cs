@@ -18,6 +18,7 @@ namespace SharpMap.Layers
 		private readonly ShapeFile _shapeFile;
 		private readonly string _fieldName;
 		private readonly string _fileName;
+		private readonly Stream _notFoundStreamImage;
 
 		/// <summary>
 		/// Open a TileIndex shapefile
@@ -45,6 +46,18 @@ namespace SharpMap.Layers
 			_fieldName = fieldName;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="layerName"></param>
+		/// <param name="fileName"></param>
+		/// <param name="fieldName"></param>
+		/// <param name="notFoundStreamImage"></param>
+		public GdiImageIndexLayer(string layerName, string fileName, string fieldName, Stream notFoundStreamImage) : this(layerName, fileName, fieldName)
+		{
+			_notFoundStreamImage = notFoundStreamImage;
+		}
+
 		/// <inheritdoc />
 		public override Envelope Envelope { get; }
 
@@ -66,12 +79,19 @@ namespace SharpMap.Layers
 						file = Path.Combine(Path.GetDirectoryName(_fileName), file);
 
 					if (file == null || !File.Exists(file))
-						continue;
+					{
+						if (_notFoundStreamImage == null)
+							continue;
+						_image = Image.FromStream(_notFoundStreamImage);
+					}
+					else
+					{
+						_image = Image.FromFile(file);
+					}
 
 					if (_logger.IsDebugEnabled)
 						_logger.Debug("Drawing " + file);
-
-					_image = Image.FromFile(file);
+					
 					_envelope = fdr.Geometry.EnvelopeInternal;
 					var xres = (_envelope.MaxX - _envelope.MinX) / _image.Width;
 					var yres = (_envelope.MaxY - _envelope.MinY)/_image.Height;
