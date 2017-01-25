@@ -167,9 +167,16 @@ namespace SharpMap.UI.WPF
 			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
 			_mapBox.ActiveToolChanged += MapBoxOnActiveToolChanged;
+			_mapBox.Map.MapViewOnChange += MapOnMapViewOnChange;
 
 			IsVisibleChanged += OnIsVisibleChanged;
 			KeyDown += OnKeyDown;
+		}
+
+		private void MapOnMapViewOnChange()
+		{
+			MapCenter = _mapBox.Map.Center;
+			MapZoom = _mapBox.Map.Zoom;
 		}
 
 		private void MapBoxOnActiveToolChanged(MapBox.Tools tool)
@@ -295,9 +302,14 @@ namespace SharpMap.UI.WPF
 
 		public Envelope MapExtent
 		{
-			get { return _mapBox.Map.Envelope; }
+			get { return (Envelope)GetValue(MapExtentProperty); }
 
-			set { SetValue(MapExtentProperty, value); }
+			set
+			{
+				if (Equals(MapExtent, value))
+					return;
+				SetValue(MapExtentProperty, value);
+			}
 		}
 
 		public Coordinate MapCenter
@@ -463,17 +475,15 @@ namespace SharpMap.UI.WPF
 		{
 			var host = sender as SharpMapHost;
 			if (host == null)
-			{
 				return;
-			}
 
 			var mapBox = host._mapBox;
 			var extent = (Envelope)args.NewValue;
-			if (extent != null)
-			{
-				mapBox.Map.EnforceMaximumExtents = true;
-				mapBox.Map.MaximumExtents = extent;
-			}
+			if (extent == null || Equals(mapBox.Map.MaximumExtents, extent))
+				return;
+
+			mapBox.Map.EnforceMaximumExtents = true;
+			mapBox.Map.MaximumExtents = extent;
 		}
 
 		/// <summary>
@@ -485,16 +495,14 @@ namespace SharpMap.UI.WPF
 		{
 			var host = sender as SharpMapHost;
 			if (host == null)
-			{
 				return;
-			}
 
 			var center = (Coordinate)args.NewValue;
-			if (center != null)
-			{
-				host._mapBox.Map.Center = center;
-				host._mapBox.Refresh();
-			}
+			if (center == null || Equals(center, host._mapBox.Map.Center))
+				return;
+
+			host._mapBox.Map.Center = center;
+			host._mapBox.Refresh();
 		}
 
 		/// <summary>
@@ -506,9 +514,7 @@ namespace SharpMap.UI.WPF
 		{
 			var host = sender as SharpMapHost;
 			if (host == null)
-			{
 				return;
-			}
 
 			var mapBox = host._mapBox;
 			var extent = (Envelope)args.NewValue;
