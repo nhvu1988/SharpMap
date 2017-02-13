@@ -2398,10 +2398,24 @@ namespace SharpMap.Forms
 			Refresh();
 		}
 
-	    /// <summary>
-	    /// Cancel drawing polygon state
-	    /// </summary>
-	    public void CancelDrawingPolygon()
+		/// <summary>
+		/// Undo drawing polygon (remove last point)
+		/// </summary>
+		public void UndoDrawingPolygon()
+		{
+			if (_map == null || _activeTool != Tools.DrawPolygon)
+				return;
+
+			if (_pointArray != null && _pointArray.Count > 0 && GeometryDefined != null)
+			{
+				_pointArray.RemoveAt(_pointArray.Count - 1);
+			}
+		}
+
+		/// <summary>
+		/// Cancel drawing polygon state
+		/// </summary>
+		public void CancelDrawingPolygon()
 	    {
 			if (_map == null || _activeTool != Tools.DrawPolygon)
 				return;

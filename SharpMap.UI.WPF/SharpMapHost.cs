@@ -70,6 +70,10 @@ namespace SharpMap.UI.WPF
 		public static readonly DependencyProperty MapMaxZoomProperty =
 			DependencyProperty.Register("MapMaxZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapMaxZoomCallback));
 
+		// Dependency Property to store MapMaxZoom.
+		public static readonly DependencyProperty MapMinZoomProperty =
+			DependencyProperty.Register("MapMinZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapMinZoomCallback));
+
 		// Dependency Property to store MapZoom.
 		public static readonly DependencyProperty MapZoomProperty =
 			DependencyProperty.Register("MapZoom", typeof(double), typeof(SharpMapHost), new PropertyMetadata(SetMapZoomCallback));
@@ -124,6 +128,9 @@ namespace SharpMap.UI.WPF
 
 		public static readonly DependencyProperty FinishDrawingGeometryEventProperty =
 			DependencyProperty.Register("FinishDrawingGeometryEvent", typeof(bool), typeof(SharpMapHost), new PropertyMetadata(FinishDrawingGeometryEventCalled));
+
+		public static readonly DependencyProperty UndoDrawingGeometryEventProperty =
+			DependencyProperty.Register("UndoDrawingGeometryEvent", typeof(bool), typeof(SharpMapHost), new PropertyMetadata(UndoDrawingGeometryEventCalled));
 
 		public static readonly DependencyProperty CancelDrawingGeometryEventProperty =
 			DependencyProperty.Register("CancelDrawingGeometryEvent", typeof(bool), typeof(SharpMapHost), new PropertyMetadata(CancelDrawingGeometryEventCalled));
@@ -320,6 +327,12 @@ namespace SharpMap.UI.WPF
 		{
 			get { return _mapBox.Map.MaximumZoom; }
 			set { SetValue(MapMaxZoomProperty, value); }
+		}
+
+		public double MapMinZoom
+		{
+			get { return _mapBox.Map.MinimumZoom; }
+			set { SetValue(MapMinZoomProperty, value); }
 		}
 
 		public double MapZoom
@@ -566,6 +579,23 @@ namespace SharpMap.UI.WPF
 			mapBox.Refresh();
 		}
 
+		private static void SetMapMinZoomCallback(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			if (host == null)
+			{
+				return;
+			}
+
+			var minZoom = (double)args.NewValue;
+			var mapBox = host._mapBox;
+			if (Math.Abs(mapBox.Map.MinimumZoom - minZoom) < 0.0001)
+				return;
+
+			mapBox.Map.MinimumZoom = minZoom;
+			mapBox.Refresh();
+		}
+
 		private static void SetMapZoomCallback(object sender, DependencyPropertyChangedEventArgs args)
 		{
 			var host = sender as SharpMapHost;
@@ -620,6 +650,14 @@ namespace SharpMap.UI.WPF
 		{
 			var host = sender as SharpMapHost;
 			host?._mapBox.FinishDrawingPolygon();
+		}
+
+		public bool UndoDrawingGeometryEvent { get; set; }
+
+		private static void UndoDrawingGeometryEventCalled(object sender, DependencyPropertyChangedEventArgs args)
+		{
+			var host = sender as SharpMapHost;
+			host?._mapBox.UndoDrawingPolygon();
 		}
 
 		public bool CancelDrawingGeometryEvent { get; set; }
