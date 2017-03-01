@@ -725,7 +725,7 @@ namespace SharpMap.UI.WPF
 			{
 				case NotifyCollectionChangedAction.Add:
 					{
-						var layers = e.NewItems.Cast<Layer>();
+						var layers = e.NewItems.Cast<ILayer>();
 						foreach (var layer in layers.Where(layer => !_mapBox.Map.Layers.Contains(layer)))
 						{
 							_mapBox.Map.Layers.Add(layer);
@@ -734,7 +734,7 @@ namespace SharpMap.UI.WPF
 					break;
 				case NotifyCollectionChangedAction.Remove:
 					{
-						var layers = e.OldItems.Cast<Layer>();
+						var layers = e.OldItems.Cast<ILayer>();
 						foreach (var layer in layers.Where(layer => _mapBox.Map.Layers.Contains(layer)))
 						{
 							_mapBox.Map.Layers.Remove(layer);
