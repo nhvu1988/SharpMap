@@ -324,13 +324,24 @@ namespace SharpMap.Forms
         /// </summary>
         public event MapCenterChangedHandler MapCenterChanged;
 
-        /// <summary>
-        /// Eventtype fired befor the active map tool change
-        /// </summary>
-        /// <param name="toolPre">pre-tool</param>
-        /// <param name="toolNew">new tool</param>
-        /// <param name="cea">a cancel indicator</param>
-        public delegate void ActiveToolChangingHandler(Tools toolPre, Tools toolNew, CancelEventArgs cea);
+		/// <summary>
+		/// Eventtype fired when the center has changed
+		/// </summary>
+		/// <param name="extent"></param>
+		public delegate void MapExtentChangedHandler(Envelope extent);
+
+		/// <summary>
+		/// Fired when the extent of the map has changed
+		/// </summary>
+		public event MapExtentChangedHandler MapExtentChanged;
+
+		/// <summary>
+		/// Eventtype fired befor the active map tool change
+		/// </summary>
+		/// <param name="toolPre">pre-tool</param>
+		/// <param name="toolNew">new tool</param>
+		/// <param name="cea">a cancel indicator</param>
+		public delegate void ActiveToolChangingHandler(Tools toolPre, Tools toolNew, CancelEventArgs cea);
 
         /// <summary>
         /// Fired befor the active map tool change
@@ -801,7 +812,8 @@ namespace SharpMap.Forms
 	    {
 		    OnMapCenterChanged(_map.Center);
 		    OnMapZoomChanged(_map.Zoom);
-		}
+		    OnMapExtentChanged(_map.Envelope);
+	    }
 
 	    protected override void OnSizeChanged(EventArgs e)
         {
@@ -1315,7 +1327,6 @@ namespace SharpMap.Forms
                         {
                             Cursor = c;
                         }
-						
 					}
                 }
             }
@@ -1787,18 +1798,29 @@ namespace SharpMap.Forms
                 handler(zoom);
         }
 
-        /// <summary>
-        /// Invokes the <see cref="E:SharpMap.Forms.MapBox.MapCenterChanged"/> event.
-        /// </summary>
-        /// <param name="center"></param>
-        protected virtual void OnMapCenterChanged(Coordinate center)
-        {
-            var handler = MapCenterChanged;
-            if (handler != null)
-                handler(center);
-        }
+	    /// <summary>
+	    /// Invokes the <see cref="E:SharpMap.Forms.MapBox.MapCenterChanged"/> event.
+	    /// </summary>
+	    /// <param name="center"></param>
+	    protected virtual void OnMapCenterChanged(Coordinate center)
+	    {
+		    var handler = MapCenterChanged;
+		    if (handler != null)
+			    handler(center);
+	    }
 
-        void HandleRefreshNeeded(object sender, EventArgs e)
+	    /// <summary>
+		/// Invokes the <see cref="E:SharpMap.Forms.MapBox.MapExtentChanged"/> event.
+		/// </summary>
+		/// <param name="extent"></param>
+		protected virtual void OnMapExtentChanged(Envelope extent)
+		{
+			var handler = MapExtentChanged;
+			if (handler != null)
+				handler(extent);
+		}
+
+		void HandleRefreshNeeded(object sender, EventArgs e)
         {
             UpdateImage(true);
         }

@@ -151,7 +151,8 @@ namespace SharpMap.UI.WPF
 			_mapBox = new MapBox
 			{
 				BackColor = Color.White,
-				Map = {SRID = 900913}
+				Map = {SRID = 900913},
+				PreviewMode = MapBox.PreviewModes.Fast
 			};
 			Child = _mapBox;
 
@@ -171,10 +172,16 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseDoubleClick += MapBoxOnMouseDoubleClick;
 			_mapBox.MapRefreshing += MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed += MapBoxOnMapRefreshed;
+			_mapBox.MapExtentChanged += MapBoxOnMapExtentChanged;
 			_mapBox.ActiveToolChanged += MapBoxOnActiveToolChanged;
 
 			IsVisibleChanged += OnIsVisibleChanged;
 			KeyDown += OnKeyDown;
+		}
+
+		private void MapBoxOnMapExtentChanged(Envelope extent)
+		{
+			MapExtent = extent;
 		}
 
 		private void MapBoxOnMapCenterChanged(Coordinate center)
@@ -241,6 +248,7 @@ namespace SharpMap.UI.WPF
 			_mapBox.MouseDoubleClick -= MapBoxOnMouseDoubleClick;
 			_mapBox.MapRefreshing -= MapBoxOnMapRefreshing;
 			_mapBox.MapRefreshed -= MapBoxOnMapRefreshed;
+			_mapBox.MapExtentChanged += MapBoxOnMapExtentChanged;
 			_mapBox.ActiveToolChanged -= MapBoxOnActiveToolChanged;
 			_mapBox.Dispose();
 
@@ -308,13 +316,8 @@ namespace SharpMap.UI.WPF
 
 		public Envelope MapExtent
 		{
-			get { return (Envelope)GetValue(MapExtentProperty); }
-			set
-			{
-				if (Equals(MapExtent, value))
-					return;
-				SetValue(MapExtentProperty, value);
-			}
+			get { return _mapBox.Map.Envelope; }
+			set { SetValue(MapExtentProperty, value); }
 		}
 
 		public Coordinate MapCenter
@@ -385,7 +388,11 @@ namespace SharpMap.UI.WPF
 		public bool IsMapRendering
 		{
 			get { return (bool) GetValue(IsMapRenderingProperty); }
-			set { SetValue(IsMapRenderingProperty, value); }
+			set
+			{
+				SetValue(IsMapRenderingProperty, value);
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsMapRendering"));
+			}
 		}
 
 		public bool IsMapVisible
@@ -444,15 +451,14 @@ namespace SharpMap.UI.WPF
 		{
 			var host = sender as SharpMapHost;
 			if (host == null)
-			{
 				return;
-			}
 
 			var mapBox = host._mapBox;
+			mapBox.Map.BackgroundLayer.Clear();
+
 			var layer = args.NewValue as ILayer;
 			if (layer != null)
 			{
-				mapBox.Map.BackgroundLayer.Clear();
 				mapBox.Map.BackgroundLayer.Add(layer);
 			}
 
@@ -529,6 +535,8 @@ namespace SharpMap.UI.WPF
 
 			var mapBox = host._mapBox;
 			var extent = (Envelope)args.NewValue;
+			if (Equals(host._mapBox.Map.Envelope, extent))
+				return;
 			mapBox.Map.ZoomToBox(extent);
 			mapBox.Refresh();
 		}
