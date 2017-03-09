@@ -603,7 +603,7 @@ namespace SharpMap.Layers
         public object Clone()
         {
             var res = (VectorLayer)MemberwiseClone();
-            res.Style = Style.Clone();
+            res.Style = Style?.Clone();
             if (Theme is ICloneable)
                 res.Theme = (ITheme) ((ICloneable) Theme).Clone();
             return res;
