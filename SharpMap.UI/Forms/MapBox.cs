@@ -2406,7 +2406,7 @@ namespace SharpMap.Forms
 		/// </summary>
 		public void FinishDrawingPolygon()
 	    {
-			if (_map == null || _activeTool != Tools.DrawPolygon)
+			if (_map == null || _activeTool != Tools.DrawPolygon || _pointArray == null || _pointArray.Count < 3)
 				return;
 
 			if (_pointArray != null && GeometryDefined != null)
