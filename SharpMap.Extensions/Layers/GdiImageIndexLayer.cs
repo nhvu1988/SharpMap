@@ -71,14 +71,15 @@ namespace SharpMap.Layers
 				_shapeFile.ExecuteIntersectionQuery(map.Envelope, ds);
 				_shapeFile.Close();
 
-				var dt = ds.Tables[0];
+			    var dt = ds.Tables[0];
 				foreach (FeatureDataRow fdr in dt.Rows)
 				{
 					var file = fdr[_fieldName] as string;
 					if (!Path.IsPathRooted(file))
 						file = Path.Combine(Path.GetDirectoryName(_fileName), file);
 
-					if (file == null || !File.Exists(file))
+				    FileStream fs = null;
+				    if (file == null || !File.Exists(file))
 					{
 						if (_notFoundStreamImage == null)
 							continue;
@@ -86,7 +87,11 @@ namespace SharpMap.Layers
 					}
 					else
 					{
-						_image = Image.FromFile(file);
+                        fs = new FileStream(file, FileMode.Open, FileAccess.Read);
+					    if (!fs.CanRead) throw new FileLoadException("Cannot read file stream");
+					    fs.Position = 0;
+                        
+					    _image = Bitmap.FromStream(fs, false, false);
 					}
 
 					if (_logger.IsDebugEnabled)
@@ -100,9 +105,10 @@ namespace SharpMap.Layers
 
 					base.Render(g, map);
 					_image.Dispose();
-				}
+				    fs?.Dispose();
+                }
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				_shapeFile.Close();
 			}
