@@ -61,6 +61,7 @@ namespace WinFormSamples
             position = geom.Centre;
             geos.Add(gf.CreatePoint(position));
             pushPinLayer.Style.Symbol = Resources.OutfallSmall;
+
             var geoProvider = new SharpMap.Data.Providers.GeometryProvider(geos);
             pushPinLayer.DataSource = geoProvider;
             this.mapBox1.Map.VariableLayers.Add(pushPinLayer);
